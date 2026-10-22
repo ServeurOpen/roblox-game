@@ -115,12 +115,28 @@ local function setupPlot(plotIndex)
 	end
 end
 
+-- Connected before anything below yields (WaitForChild), so a player who
+-- loads in before plot setup finishes is never missed: assignPlot itself
+-- is safe to call early since PlotManager's own calls wait for the Plots
+-- folder to exist.
+PlayerData.DataLoaded:Connect(assignPlot)
+
 Workspace:WaitForChild("Plots")
 for i = 1, GameConfig.PlotCount do
 	setupPlot(i)
 end
 
-PlayerData.DataLoaded:Connect(assignPlot)
+-- Catch up on anyone whose data finished loading before the connection
+-- above was made (e.g. the local test player in Studio, who can join
+-- before this script even starts running).
+for _, player in ipairs(Players:GetPlayers()) do
+	if not activePlotByUser[player.UserId] then
+		local data = PlayerData.Get(player)
+		if data then
+			assignPlot(player, data)
+		end
+	end
+end
 
 Players.PlayerRemoving:Connect(function(player)
 	local plotIndex = activePlotByUser[player.UserId]
