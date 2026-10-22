@@ -1,29 +1,41 @@
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local store = DataStoreService:GetDataStore("PlayerData_v1")
+local GameConfig = require(ReplicatedStorage.GameConfig)
+
+local store = DataStoreService:GetDataStore("PlayerData_v2")
 
 local DEFAULT_DATA = {
-	Cash = 0,
+	Cash = GameConfig.StartingCash,
 	OwnsDoubleCash = false,
 	OwnsVIP = false,
+	PlotIndex = nil,
+	GeneratorCount = 0,
 }
 
 local cache = {}
 
 local PlayerData = {}
 
+local dataLoadedEvent = Instance.new("BindableEvent")
+-- Fires (player, data) once a player's save is loaded and cached. Other
+-- server scripts should hook this instead of calling Load themselves, so
+-- each player's data is only ever fetched from the DataStore once.
+PlayerData.DataLoaded = dataLoadedEvent.Event
+
 function PlayerData.Load(player)
 	local ok, result = pcall(function()
 		return store:GetAsync("Player_" .. player.UserId)
 	end)
 
-	local data = DEFAULT_DATA
+	local data = table.clone(DEFAULT_DATA)
 	if ok and result then
 		data = result
 	end
 
 	cache[player.UserId] = data
+	dataLoadedEvent:Fire(player, data)
 	return data
 end
 

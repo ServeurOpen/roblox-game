@@ -11,6 +11,12 @@ return {
 		Cash_500 = 0,
 		Cash_2000 = 0,
 	},
-	BaseCashPerSecond = 1,
+	BaseCashPerSecond = 0,
 	PlotCount = 6,
+	PlotSpacing = 60,
+	StartingCash = 50,
+	GeneratorBaseCost = 50,
+	GeneratorCostMultiplier = 1.15,
+	CashPerGeneratorPerSecond = 2,
+	MaxGeneratorsPerPlot = 20,
 }

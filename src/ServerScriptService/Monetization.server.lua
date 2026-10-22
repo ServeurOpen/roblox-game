@@ -32,11 +32,9 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
-Players.PlayerAdded:Connect(function(player)
+PlayerData.DataLoaded:Connect(function(player, data)
 	-- Apply Game Pass ownership once, on join, so repeated UserOwnsGamePassAsync
 	-- calls during play aren't needed.
-	local data = PlayerData.Load(player)
-
 	local okDouble, ownsDouble = pcall(function()
 		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, GameConfig.GamePasses.DoubleCash)
 	end)

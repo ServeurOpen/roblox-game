@@ -25,12 +25,11 @@ getPlayerData.OnServerInvoke = function(player)
 	return data and data.Cash or 0
 end
 
-Players.PlayerAdded:Connect(function(player)
-	local data = PlayerData.Load(player)
+PlayerData.DataLoaded:Connect(function(player, data)
 	cashUpdated:FireClient(player, data.Cash)
 end)
 
--- Passive cash generation loop. Replace with real tycoon-plot income later.
+-- Passive cash generation loop: base rate plus each owned generator.
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -38,10 +37,13 @@ task.spawn(function()
 			local data = PlayerData.Get(player)
 			if data then
 				local rate = GameConfig.BaseCashPerSecond
+					+ data.GeneratorCount * GameConfig.CashPerGeneratorPerSecond
 				if data.OwnsDoubleCash then
 					rate *= 2
 				end
-				addCash(player, rate)
+				if rate > 0 then
+					addCash(player, rate)
+				end
 			end
 		end
 	end
