@@ -66,7 +66,7 @@ local function assignPlot(player, data)
 	data.PlotIndex = plotIndex
 	activePlotByUser[player.UserId] = plotIndex
 
-	PlotManager.RenderGenerators(plotIndex, data.GeneratorCount)
+	PlotManager.SyncGenerators(plotIndex, data.GeneratorCount, false)
 	PlotManager.UpdateStats(plotIndex, data.GeneratorCount)
 	updateBuyPromptText(plotIndex, data.GeneratorCount)
 	teleportToPlot(player, plotIndex)
@@ -96,7 +96,7 @@ local function onBuyTriggered(player, plotIndex)
 	data.GeneratorCount += 1
 
 	cashUpdated:FireClient(player, data.Cash)
-	PlotManager.RenderGenerators(plotIndex, data.GeneratorCount)
+	PlotManager.SyncGenerators(plotIndex, data.GeneratorCount, true)
 	PlotManager.UpdateStats(plotIndex, data.GeneratorCount)
 	updateBuyPromptText(plotIndex, data.GeneratorCount)
 end

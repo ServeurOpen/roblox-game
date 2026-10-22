@@ -1,4 +1,6 @@
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
 
 local GameConfig = require(game:GetService("ReplicatedStorage").GameConfig)
 
@@ -14,46 +16,83 @@ local function getPlotModel(plotIndex)
 	return getPlotsFolder():FindFirstChild("Plot" .. plotIndex)
 end
 
--- Rebuilds the visible generator parts on a plot to match generatorCount.
--- Called on claim and on every purchase so a rejoining player sees their
--- progress even though parts themselves aren't saved, only the count is.
-function PlotManager.RenderGenerators(plotIndex, generatorCount)
+local GENERATOR_SIZE = Vector3.new(3, 3, 3)
+local PER_ROW = 5
+local COL_SPACING = 6
+local ROW_SPACING = 4
+
+local function generatorOffset(index)
+	local row = math.floor((index - 1) / PER_ROW)
+	local col = (index - 1) % PER_ROW
+	return Vector3.new(-12 + col * COL_SPACING, 2.5, -4 - row * ROW_SPACING)
+end
+
+local function playPurchaseEffect(part, accent)
+	part.Size = Vector3.new(0.2, 0.2, 0.2)
+
+	local growTween = TweenService:Create(
+		part,
+		TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Size = GENERATOR_SIZE }
+	)
+	growTween:Play()
+
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Lifetime = NumberRange.new(0.4, 0.8)
+	sparkles.Rate = 0
+	sparkles.Speed = NumberRange.new(4, 8)
+	sparkles.SpreadAngle = Vector2.new(180, 180)
+	sparkles.Color = ColorSequence.new(accent)
+	sparkles.Parent = part
+	sparkles:Emit(24)
+	Debris:AddItem(sparkles, 1.5)
+
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxasset://sounds/electronicpingshort.wav"
+	sound.Volume = 0.6
+	sound.Parent = part
+	sound:Play()
+	Debris:AddItem(sound, 2)
+end
+
+-- Syncs the visible generator parts on a plot up to targetCount, only
+-- adding the parts that are missing (doesn't touch ones already there).
+-- Called on claim/rejoin (animateNew = false, instant) and on purchase
+-- (animateNew = true, pops in with a tween + sparkles + sound).
+function PlotManager.SyncGenerators(plotIndex, targetCount, animateNew)
 	local plot = getPlotModel(plotIndex)
 	if not plot then
 		return
 	end
-
-	local generatorsFolder = plot:FindFirstChild("Generators")
-	if generatorsFolder then
-		generatorsFolder:Destroy()
-	end
-
-	generatorsFolder = Instance.new("Folder")
-	generatorsFolder.Name = "Generators"
-	generatorsFolder.Parent = plot
 
 	local base = plot:FindFirstChild("Base")
 	if not base then
 		return
 	end
 
+	local generatorsFolder = plot:FindFirstChild("Generators")
+	if not generatorsFolder then
+		generatorsFolder = Instance.new("Folder")
+		generatorsFolder.Name = "Generators"
+		generatorsFolder.Parent = plot
+	end
+
+	local existingCount = #generatorsFolder:GetChildren()
+	if existingCount > targetCount then
+		generatorsFolder:ClearAllChildren()
+		existingCount = 0
+	end
+
 	local accent = plot:GetAttribute("AccentColor") or Color3.fromRGB(90, 210, 150)
-	local perRow = 5
-	local colSpacing = 6
-	local rowSpacing = 4
 
-	for i = 1, generatorCount do
-		local row = math.floor((i - 1) / perRow)
-		local col = (i - 1) % perRow
-
+	for i = existingCount + 1, targetCount do
 		local part = Instance.new("Part")
 		part.Name = "Generator"
-		part.Size = Vector3.new(3, 3, 3)
+		part.Size = GENERATOR_SIZE
 		part.Anchored = true
 		part.Color = accent
 		part.Material = Enum.Material.Neon
-		part.Position = base.Position
-			+ Vector3.new(-12 + col * colSpacing, 2.5, -4 - row * rowSpacing)
+		part.Position = base.Position + generatorOffset(i)
 		part.Parent = generatorsFolder
 
 		local light = Instance.new("PointLight")
@@ -61,6 +100,10 @@ function PlotManager.RenderGenerators(plotIndex, generatorCount)
 		light.Range = 8
 		light.Brightness = 1.5
 		light.Parent = part
+
+		if animateNew then
+			playPurchaseEffect(part, accent)
+		end
 	end
 end
 
