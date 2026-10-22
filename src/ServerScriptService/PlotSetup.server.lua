@@ -13,6 +13,15 @@ local PLOT_COLORS = {
 	Color3.fromRGB(235, 130, 190),
 }
 
+-- Guard against a duplicate "Plots" folder if this script somehow runs
+-- twice in the same server (e.g. a Rojo sync landing mid-session instead
+-- of before a fresh Play), which would otherwise leave two overlapping
+-- sets of plots and very confusing "my plot looks empty" bugs.
+local existingPlots = Workspace:FindFirstChild("Plots")
+if existingPlots then
+	existingPlots:Destroy()
+end
+
 local plotsFolder = Instance.new("Folder")
 plotsFolder.Name = "Plots"
 plotsFolder.Parent = Workspace
