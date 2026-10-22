@@ -86,6 +86,7 @@ for i = 1, GameConfig.PlotCount do
 	billboard.Size = UDim2.fromOffset(220, 70)
 	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.AlwaysOnTop = true
+	billboard.MaxDistance = 35
 	billboard.Parent = postPart
 
 	local ownerLabel = Instance.new("TextLabel")
