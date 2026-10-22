@@ -1,4 +1,5 @@
 local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -35,23 +36,44 @@ local function updateBuyPromptText(plotIndex, generatorCount)
 	end
 end
 
-local function onClaimTriggered(player, plotIndex)
-	local data = PlayerData.Get(player)
-	if not data then
+local function teleportToPlot(player, plotIndex)
+	local cframe = PlotManager.GetSpawnCFrame(plotIndex)
+	if not cframe then
 		return
 	end
 
-	if data.PlotIndex ~= nil then
-		-- Already owns a plot; ignore extra claim attempts.
-		return
+	local character = player.Character or player.CharacterAdded:Wait()
+	character:PivotTo(cframe)
+end
+
+local function assignPlot(player, data)
+	local plotIndex = data.PlotIndex
+
+	if plotIndex and not PlotManager.ClaimPlot(player, plotIndex) then
+		-- Someone else ended up on their saved plot (e.g. after a server
+		-- restart race); fall back to finding them a new one.
+		plotIndex = nil
 	end
 
-	if PlotManager.ClaimPlot(player, plotIndex) then
-		data.PlotIndex = plotIndex
-		activePlotByUser[player.UserId] = plotIndex
-		PlotManager.RenderGenerators(plotIndex, data.GeneratorCount)
-		updateBuyPromptText(plotIndex, data.GeneratorCount)
+	if not plotIndex then
+		plotIndex = PlotManager.GetFreePlotIndex()
+		if not plotIndex or not PlotManager.ClaimPlot(player, plotIndex) then
+			-- All plots are taken; nothing to assign right now.
+			return
+		end
 	end
+
+	data.PlotIndex = plotIndex
+	activePlotByUser[player.UserId] = plotIndex
+
+	PlotManager.RenderGenerators(plotIndex, data.GeneratorCount)
+	PlotManager.UpdateStats(plotIndex, data.GeneratorCount)
+	updateBuyPromptText(plotIndex, data.GeneratorCount)
+	teleportToPlot(player, plotIndex)
+
+	player.CharacterAdded:Connect(function()
+		teleportToPlot(player, plotIndex)
+	end)
 end
 
 local function onBuyTriggered(player, plotIndex)
@@ -75,6 +97,7 @@ local function onBuyTriggered(player, plotIndex)
 
 	cashUpdated:FireClient(player, data.Cash)
 	PlotManager.RenderGenerators(plotIndex, data.GeneratorCount)
+	PlotManager.UpdateStats(plotIndex, data.GeneratorCount)
 	updateBuyPromptText(plotIndex, data.GeneratorCount)
 end
 
@@ -82,13 +105,6 @@ local function setupPlot(plotIndex)
 	local plot = Workspace.Plots:FindFirstChild("Plot" .. plotIndex)
 	if not plot then
 		return
-	end
-
-	local claimPrompt = plot:FindFirstChild("ClaimPrompt", true)
-	if claimPrompt then
-		claimPrompt.Triggered:Connect(function(player)
-			onClaimTriggered(player, plotIndex)
-		end)
 	end
 
 	local buyPrompt = plot:FindFirstChild("BuyGeneratorPrompt", true)
@@ -104,25 +120,9 @@ for i = 1, GameConfig.PlotCount do
 	setupPlot(i)
 end
 
--- Re-attach a returning player to their saved plot if it's still free, and
--- rebuild their generators so progress is visible again. Otherwise they
--- keep their generator count/cash but must claim a (possibly different)
--- free plot manually.
-PlayerData.DataLoaded:Connect(function(player, data)
-	if data.PlotIndex and PlotManager.IsPlotFree(data.PlotIndex) then
-		if PlotManager.ClaimPlot(player, data.PlotIndex) then
-			activePlotByUser[player.UserId] = data.PlotIndex
-			PlotManager.RenderGenerators(data.PlotIndex, data.GeneratorCount)
-			updateBuyPromptText(data.PlotIndex, data.GeneratorCount)
-		end
-	elseif data.PlotIndex then
-		-- Someone else is on their saved plot (unlikely but possible after
-		-- a server restart race); they'll need to claim a new one.
-		data.PlotIndex = nil
-	end
-end)
+PlayerData.DataLoaded:Connect(assignPlot)
 
-game:GetService("Players").PlayerRemoving:Connect(function(player)
+Players.PlayerRemoving:Connect(function(player)
 	local plotIndex = activePlotByUser[player.UserId]
 	if plotIndex then
 		PlotManager.ReleasePlot(plotIndex)

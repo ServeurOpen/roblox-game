@@ -3,14 +3,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage.GameConfig)
 
+-- One accent color per plot, cycled if there are more plots than colors.
+local PLOT_COLORS = {
+	Color3.fromRGB(235, 100, 90),
+	Color3.fromRGB(90, 160, 235),
+	Color3.fromRGB(240, 185, 70),
+	Color3.fromRGB(140, 110, 230),
+	Color3.fromRGB(90, 210, 150),
+	Color3.fromRGB(235, 130, 190),
+}
+
 local plotsFolder = Instance.new("Folder")
 plotsFolder.Name = "Plots"
 plotsFolder.Parent = Workspace
 
 for i = 1, GameConfig.PlotCount do
+	local accent = PLOT_COLORS[((i - 1) % #PLOT_COLORS) + 1]
+
 	local plot = Instance.new("Model")
 	plot.Name = "Plot" .. i
 	plot:SetAttribute("PlotIndex", i)
+	plot:SetAttribute("AccentColor", accent)
 	plot.Parent = plotsFolder
 
 	local centerX = (i - 1) * GameConfig.PlotSpacing
@@ -19,54 +32,92 @@ for i = 1, GameConfig.PlotCount do
 	base.Name = "Base"
 	base.Size = Vector3.new(40, 1, 40)
 	base.Anchored = true
-	base.Color = Color3.fromRGB(60, 120, 60)
+	base.Material = Enum.Material.Grass
+	base.Color = Color3.fromRGB(70, 150, 80)
 	base.Position = Vector3.new(centerX, 0, 0)
 	base.Parent = plot
 
-	local signPart = Instance.new("Part")
-	signPart.Name = "SignPart"
-	signPart.Size = Vector3.new(6, 4, 0.5)
-	signPart.Anchored = true
-	signPart.Color = Color3.fromRGB(30, 30, 30)
-	signPart.Position = Vector3.new(centerX, 2.5, -19)
-	signPart.Parent = plot
+	-- Thin accent trim along the front edge so each plot reads as its own
+	-- color from a distance, without blocking movement.
+	local trim = Instance.new("Part")
+	trim.Name = "Trim"
+	trim.Size = Vector3.new(40, 0.2, 2)
+	trim.Anchored = true
+	trim.CanCollide = false
+	trim.Material = Enum.Material.Neon
+	trim.Color = accent
+	trim.Position = Vector3.new(centerX, 1.1, 19)
+	trim.Parent = plot
 
-	local surfaceGui = Instance.new("SurfaceGui")
-	surfaceGui.Face = Enum.NormalId.Front
-	surfaceGui.Parent = signPart
+	-- Decorative corner pillars.
+	for _, corner in ipairs({ { -19, -19 }, { 19, -19 }, { -19, 19 }, { 19, 19 } }) do
+		local pillar = Instance.new("Part")
+		pillar.Name = "Pillar"
+		pillar.Size = Vector3.new(2, 6, 2)
+		pillar.Anchored = true
+		pillar.Material = Enum.Material.Wood
+		pillar.Color = Color3.fromRGB(90, 60, 40)
+		pillar.Position = Vector3.new(centerX + corner[1], 3, corner[2])
+		pillar.Parent = plot
+	end
 
-	local sign = Instance.new("TextLabel")
-	sign.Name = "Sign"
-	sign.Size = UDim2.fromScale(1, 1)
-	sign.BackgroundTransparency = 1
-	sign.TextColor3 = Color3.fromRGB(255, 255, 255)
-	sign.TextScaled = true
-	sign.Font = Enum.Font.GothamBold
-	sign.Text = "Free plot - claim me!"
-	sign.Parent = surfaceGui
+	-- Invisible reference point used to teleport the owner onto their plot.
+	local spawnAnchor = Instance.new("Part")
+	spawnAnchor.Name = "SpawnAnchor"
+	spawnAnchor.Size = Vector3.new(4, 1, 4)
+	spawnAnchor.Anchored = true
+	spawnAnchor.CanCollide = false
+	spawnAnchor.Transparency = 1
+	spawnAnchor.Position = Vector3.new(centerX, 2, 15)
+	spawnAnchor.Parent = plot
 
-	local claimPad = Instance.new("Part")
-	claimPad.Name = "ClaimPad"
-	claimPad.Size = Vector3.new(6, 1, 6)
-	claimPad.Anchored = true
-	claimPad.Color = Color3.fromRGB(80, 140, 220)
-	claimPad.Position = Vector3.new(centerX, 1, -14)
-	claimPad.Parent = plot
+	-- Floating nameplate above the plot.
+	local postPart = Instance.new("Part")
+	postPart.Name = "NamePost"
+	postPart.Size = Vector3.new(1, 8, 1)
+	postPart.Anchored = true
+	postPart.Material = Enum.Material.Metal
+	postPart.Color = Color3.fromRGB(40, 40, 40)
+	postPart.Position = Vector3.new(centerX, 4, -18)
+	postPart.Parent = plot
 
-	local claimPrompt = Instance.new("ProximityPrompt")
-	claimPrompt.Name = "ClaimPrompt"
-	claimPrompt.ActionText = "Claim plot"
-	claimPrompt.ObjectText = "Plot " .. i
-	claimPrompt.HoldDuration = 0.5
-	claimPrompt.MaxActivationDistance = 10
-	claimPrompt.Parent = claimPad
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "NameBillboard"
+	billboard.Size = UDim2.fromOffset(220, 70)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = postPart
+
+	local ownerLabel = Instance.new("TextLabel")
+	ownerLabel.Name = "OwnerLabel"
+	ownerLabel.Size = UDim2.new(1, 0, 0.6, 0)
+	ownerLabel.BackgroundTransparency = 1
+	ownerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ownerLabel.TextStrokeTransparency = 0.3
+	ownerLabel.TextScaled = true
+	ownerLabel.Font = Enum.Font.GothamBold
+	ownerLabel.Text = "Empty plot"
+	ownerLabel.Parent = billboard
+
+	local statsLabel = Instance.new("TextLabel")
+	statsLabel.Name = "StatsLabel"
+	statsLabel.Size = UDim2.new(1, 0, 0.4, 0)
+	statsLabel.Position = UDim2.new(0, 0, 0.6, 0)
+	statsLabel.BackgroundTransparency = 1
+	statsLabel.TextColor3 = accent
+	statsLabel.TextStrokeTransparency = 0.3
+	statsLabel.TextScaled = true
+	statsLabel.Font = Enum.Font.Gotham
+	statsLabel.Text = ""
+	statsLabel.Parent = billboard
 
 	local buyPad = Instance.new("Part")
 	buyPad.Name = "BuyGeneratorPad"
 	buyPad.Size = Vector3.new(6, 1, 6)
 	buyPad.Anchored = true
-	buyPad.Color = Color3.fromRGB(220, 170, 60)
-	buyPad.Position = Vector3.new(centerX, 1, 14)
+	buyPad.Material = Enum.Material.Neon
+	buyPad.Color = accent
+	buyPad.Position = Vector3.new(centerX, 1, 0)
 	buyPad.Parent = plot
 
 	local buyPrompt = Instance.new("ProximityPrompt")

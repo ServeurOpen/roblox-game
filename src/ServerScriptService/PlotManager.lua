@@ -37,21 +37,42 @@ function PlotManager.RenderGenerators(plotIndex, generatorCount)
 		return
 	end
 
+	local accent = plot:GetAttribute("AccentColor") or Color3.fromRGB(90, 210, 150)
 	local perRow = 5
-	local spacing = 6
+	local colSpacing = 6
+	local rowSpacing = 4
+
 	for i = 1, generatorCount do
 		local row = math.floor((i - 1) / perRow)
 		local col = (i - 1) % perRow
 
 		local part = Instance.new("Part")
 		part.Name = "Generator"
-		part.Size = Vector3.new(4, 4, 4)
+		part.Size = Vector3.new(3, 3, 3)
 		part.Anchored = true
-		part.Color = Color3.fromRGB(80, 170, 90)
+		part.Color = accent
 		part.Material = Enum.Material.Neon
 		part.Position = base.Position
-			+ Vector3.new(-12 + col * spacing, 3, -12 + row * spacing)
+			+ Vector3.new(-12 + col * colSpacing, 2.5, -4 - row * rowSpacing)
 		part.Parent = generatorsFolder
+
+		local light = Instance.new("PointLight")
+		light.Color = accent
+		light.Range = 8
+		light.Brightness = 1.5
+		light.Parent = part
+	end
+end
+
+function PlotManager.UpdateStats(plotIndex, generatorCount)
+	local plot = getPlotModel(plotIndex)
+	if not plot then
+		return
+	end
+
+	local statsLabel = plot:FindFirstChild("StatsLabel", true)
+	if statsLabel and statsLabel:IsA("TextLabel") then
+		statsLabel.Text = "Generators: " .. generatorCount
 	end
 end
 
@@ -72,15 +93,16 @@ function PlotManager.ClaimPlot(player, plotIndex)
 		return false
 	end
 
-	if plot:GetAttribute("OwnerUserId") ~= nil then
+	local currentOwner = plot:GetAttribute("OwnerUserId")
+	if currentOwner ~= nil and currentOwner ~= player.UserId then
 		return false
 	end
 
 	plot:SetAttribute("OwnerUserId", player.UserId)
 
-	local sign = plot:FindFirstChild("Sign", true)
-	if sign and sign:IsA("TextLabel") then
-		sign.Text = player.Name .. "'s plot"
+	local ownerLabel = plot:FindFirstChild("OwnerLabel", true)
+	if ownerLabel and ownerLabel:IsA("TextLabel") then
+		ownerLabel.Text = player.Name .. "'s factory"
 	end
 
 	return true
@@ -94,15 +116,34 @@ function PlotManager.ReleasePlot(plotIndex)
 
 	plot:SetAttribute("OwnerUserId", nil)
 
-	local sign = plot:FindFirstChild("Sign", true)
-	if sign and sign:IsA("TextLabel") then
-		sign.Text = "Free plot - claim me!"
+	local ownerLabel = plot:FindFirstChild("OwnerLabel", true)
+	if ownerLabel and ownerLabel:IsA("TextLabel") then
+		ownerLabel.Text = "Empty plot"
+	end
+
+	local statsLabel = plot:FindFirstChild("StatsLabel", true)
+	if statsLabel and statsLabel:IsA("TextLabel") then
+		statsLabel.Text = ""
 	end
 end
 
 function PlotManager.IsPlotFree(plotIndex)
 	local plot = getPlotModel(plotIndex)
 	return plot ~= nil and plot:GetAttribute("OwnerUserId") == nil
+end
+
+function PlotManager.GetSpawnCFrame(plotIndex)
+	local plot = getPlotModel(plotIndex)
+	if not plot then
+		return nil
+	end
+
+	local anchor = plot:FindFirstChild("SpawnAnchor")
+	if not anchor then
+		return nil
+	end
+
+	return anchor.CFrame + Vector3.new(0, 3, 0)
 end
 
 return PlotManager
