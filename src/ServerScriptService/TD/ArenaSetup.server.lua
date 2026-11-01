@@ -158,7 +158,7 @@ for arenaIndex = 1, ARENA_COUNT do
 				local prompt = Instance.new("ProximityPrompt")
 				prompt.Name = "BuildPrompt"
 				prompt.ActionText = "Build"
-				prompt.ObjectText = "Select a tower"
+				prompt.ObjectText = "Choose a tower"
 				prompt.HoldDuration = 0.15
 				prompt.MaxActivationDistance = 12
 				prompt.Parent = tile
@@ -166,3 +166,11 @@ for arenaIndex = 1, ARENA_COUNT do
 		end
 	end
 end
+
+-- Marks the folder as fully populated (all arenas, waypoints and tiles
+-- built) so other scripts can wait for real readiness instead of just
+-- the folder's existence - WaitForChild("Arenas") resolves the instant
+-- this folder is created, long before the per-arena loop above actually
+-- fills it in, which left tile build prompts with no server-side click
+-- handler if GameLoop.server.lua reached that point first.
+arenasFolder:SetAttribute("Ready", true)

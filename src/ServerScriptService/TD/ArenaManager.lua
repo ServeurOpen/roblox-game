@@ -4,14 +4,30 @@ local ArenaManager = {}
 
 ArenaManager.ARENA_COUNT = 4
 
+-- WaitForChild only waits for the "Arenas" folder itself to exist, which
+-- happens the instant ArenaSetup.server.lua creates it - well before that
+-- script's per-arena loop has actually built any waypoints/tiles. Every
+-- caller here needs the fully-built arenas, so also wait for the Ready
+-- attribute ArenaSetup sets once it's truly done.
 local function getArenasFolder()
-	return Workspace:WaitForChild("Arenas")
+	local folder = Workspace:WaitForChild("Arenas")
+	if not folder:GetAttribute("Ready") then
+		folder:GetAttributeChangedSignal("Ready"):Wait()
+	end
+	return folder
 end
 
 local function getArenaModel(arenaIndex)
 	return getArenasFolder():FindFirstChild("Arena" .. arenaIndex)
 end
 ArenaManager.GetArenaModel = getArenaModel
+
+-- Blocks until every arena (waypoints, tiles, etc.) is fully built. Call
+-- this before iterating arenas/tiles directly (not through the other
+-- functions here, which already wait internally).
+function ArenaManager.WaitUntilReady()
+	getArenasFolder()
+end
 
 function ArenaManager.GetFreeArenaIndex()
 	for i = 1, ArenaManager.ARENA_COUNT do

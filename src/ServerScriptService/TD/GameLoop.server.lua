@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -226,7 +225,7 @@ end)
 
 -- ============================ build / upgrade prompts ============================
 
-Workspace:WaitForChild("Arenas")
+ArenaManager.WaitUntilReady()
 for arenaIndex = 1, ArenaManager.ARENA_COUNT do
 	local arena = ArenaManager.GetArenaModel(arenaIndex)
 	local tilesFolder = arena and arena:FindFirstChild("Tiles")
