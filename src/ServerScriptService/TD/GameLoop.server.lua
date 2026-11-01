@@ -207,16 +207,27 @@ local function availableEnemyKeys(wave)
 	return keys
 end
 
+local BOSS_WAVE_INTERVAL = 10
+
 local function startNextWave(state)
 	state.Wave += 1
-	local count = Formulas.EnemyCount(state.Wave)
-	local interval = Formulas.SpawnInterval(state.Wave)
-	local available = availableEnemyKeys(state.Wave)
+	local isBossWave = state.Wave % BOSS_WAVE_INTERVAL == 0
 
 	state.PendingSpawns = {}
-	for i = 1, count do
-		local key = available[math.random(1, #available)]
-		table.insert(state.PendingSpawns, { Key = key, Delay = (i - 1) * interval })
+	if isBossWave then
+		-- A single, much tougher enemy instead of the usual swarm. "boss"
+		-- has unlockWave = math.huge so it never shows up in a normal
+		-- wave's random pool - it's only ever spawned from here.
+		table.insert(state.PendingSpawns, { Key = "boss", Delay = 0 })
+	else
+		local count = Formulas.EnemyCount(state.Wave)
+		local interval = Formulas.SpawnInterval(state.Wave)
+		local available = availableEnemyKeys(state.Wave)
+
+		for i = 1, count do
+			local key = available[math.random(1, #available)]
+			table.insert(state.PendingSpawns, { Key = key, Delay = (i - 1) * interval })
+		end
 	end
 
 	state.WaveKills = 0
@@ -224,7 +235,7 @@ local function startNextWave(state)
 	state.WaveLivesLost = 0
 	state.Status = "spawning"
 	RunState.Push(state.Player)
-	announce(state.Player, "Vague " .. state.Wave)
+	announce(state.Player, isBossWave and ("Vague Boss " .. state.Wave .. " !") or ("Vague " .. state.Wave))
 end
 
 local function resetRun(state)
@@ -359,6 +370,17 @@ local function tryBuild(player, tile, towerKey, arenaIndex)
 		local upgraded = TowerManager.Upgrade(upgradeState, tower)
 		if upgraded then
 			RunState.Push(upgradePlayer)
+		end
+	end)
+
+	tower.SellPrompt.Triggered:Connect(function(sellingPlayer)
+		local sellState = RunState.Get(sellingPlayer)
+		if not sellState or sellState.ArenaIndex ~= arenaIndex then
+			return
+		end
+
+		if TowerManager.Sell(sellState, tower) then
+			RunState.Push(sellingPlayer)
 		end
 	end)
 

@@ -16,7 +16,7 @@ local startWaveNow = remotes:WaitForChild(RemoteNames.START_WAVE_NOW)
 local waveEvent = remotes:WaitForChild(RemoteNames.WAVE_EVENT)
 
 -- Ordered so the tower picker lists them by unlock wave.
-local TOWER_ORDER = { "cannon", "archer", "frost", "fire" }
+local TOWER_ORDER = { "cannon", "archer", "frost", "fire", "tesla" }
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TowerDefenseHUD"
@@ -142,7 +142,8 @@ pickerOverlay.Parent = screenGui
 
 local pickerPanel = Instance.new("Frame")
 pickerPanel.Name = "TowerPickerPanel"
-pickerPanel.Size = UDim2.new(0, 300, 0, 300)
+-- Tall enough for 2 columns x 3 rows now that Tesla makes 5 towers.
+pickerPanel.Size = UDim2.new(0, 300, 0, 360)
 pickerPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 pickerPanel.Position = UDim2.fromScale(0.5, 0.5)
 pickerPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)

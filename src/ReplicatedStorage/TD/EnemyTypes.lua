@@ -51,4 +51,16 @@ return {
 		unlockWave = math.huge,
 		color = Color3.fromRGB(215, 156, 232),
 	},
+	boss = {
+		name = "Golem Ancestral",
+		hp = 900,
+		speed = 9,
+		value = 40,
+		dmg = 5,
+		scale = 2.2,
+		-- Only ever spawned explicitly on a boss wave, never picked for a
+		-- regular wave's random pool.
+		unlockWave = math.huge,
+		color = Color3.fromRGB(255, 80, 80),
+	},
 }

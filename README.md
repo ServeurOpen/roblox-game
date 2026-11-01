@@ -40,12 +40,18 @@ automatiquement dans Studio tant que `rojo serve` tourne.
   à l'arrivée, avec téléportation directe dessus.
 - Chemin en zigzag généré proceduralement, zones constructibles
   calculées automatiquement autour du chemin (pas de placement à la main).
-- 4 tours : Canon, Tour Archer, Tour de Glace (ralentit), Tour de Feu
-  (brûlure) — stats/coûts repris du fichier source.
-- 4 ennemis : Rôdeur, Furtif Rapide, Blindé, Diviseur (se divise en
-  Éclats à sa mort) — stats reprises du fichier source.
+- 5 tours : Canon, Tour Archer, Tour de Glace (ralentit), Tour de Feu
+  (brûlure), Tour Tesla (éclair en chaîne sur plusieurs ennemis) — stats/
+  coûts repris du fichier source pour les 4 premières, Tesla est une
+  addition propre à ce portage.
+- 4 ennemis réguliers : Rôdeur, Furtif Rapide, Blindé, Diviseur (se
+  divise en Éclats à sa mort) — stats reprises du fichier source.
+- Vagues de boss toutes les 10 vagues (Golem Ancestral : un seul ennemi,
+  beaucoup plus résistant et dangereux, grosse récompense en or).
 - Vagues infinies avec la vraie formule de scaling du jeu original
   (nombre d'ennemis, vitesse de spawn, vie, vitesse, récompense en or).
+- Vente de tours (touche F sur la tour, remboursement 50% du total
+  dépensé dessus) en plus de l'amélioration (touche E).
 - Or de départ 200, 20 vies, défaite = reset de la run (le meilleur
   numéro de vague atteint est sauvegardé en `PlayerData.BestWave`).
 - HUD : or/vies/vague, menu de construction, bouton "Lancer la vague"
@@ -58,13 +64,13 @@ Le jeu source est enorme (9 tours, 16 ennemis dont 5 boss, synergies
 Tout faire d'un coup aurait donné quelque chose de bâclé — on ajoute le
 reste par vagues, testées une par une :
 
-- Tours restantes : Vent, Tesla, Poison, Caserne Militaire, Tour du
-  Prestige.
-- Ennemis restants + vagues de Boss/Mini-Boss (toutes les 10/5 vagues),
-  roulette de boss, Nécromancien (invocation), Chaman Soigneur.
+- Tours restantes : Vent, Poison, Caserne Militaire, Tour du Prestige.
+- Ennemis restants + roulette de boss (plusieurs boss différents au lieu
+  d'un seul), mini-boss toutes les 5 vagues, Nécromancien (invocation),
+  Chaman Soigneur.
 - Synergies élémentaires entre tours.
 - Vagues maudites (mutateurs aléatoires après la vague 15).
-- Vente de tours, repositionnement.
+- Repositionnement de tours (la vente existe déjà).
 - Système de Prestige, Wiki, classement, succès.
 - Monétisation (Game Pass/Dev Products) — volontairement pas encore
   remise en place, à faire une fois le cœur de jeu validé.

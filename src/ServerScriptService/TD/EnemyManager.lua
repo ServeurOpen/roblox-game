@@ -7,10 +7,11 @@ local ArenaManager = require(script.Parent.ArenaManager)
 local EnemyManager = {}
 
 local function createModel(key, def, position)
+	local scale = def.scale or 1
 	local part = Instance.new("Part")
 	part.Name = "Enemy_" .. key
 	part.Shape = Enum.PartType.Ball
-	part.Size = Vector3.new(2.6, 2.6, 2.6)
+	part.Size = Vector3.new(2.6, 2.6, 2.6) * scale
 	part.Anchored = true
 	part.CanCollide = false
 	part.Material = Enum.Material.Neon
@@ -18,8 +19,8 @@ local function createModel(key, def, position)
 	part.Position = position
 
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.fromOffset(40, 6)
-	billboard.StudsOffset = Vector3.new(0, 2.4, 0)
+	billboard.Size = UDim2.fromOffset(40 * scale, 6 * scale)
+	billboard.StudsOffset = Vector3.new(0, 2.4 * scale, 0)
 	billboard.AlwaysOnTop = true
 	billboard.Parent = part
 

@@ -59,6 +59,17 @@ function TowerManager.Build(state, tile, towerKey)
 	prompt.MaxActivationDistance = 12
 	prompt.Parent = model
 
+	-- Separate key (F) from the upgrade prompt (E, Roblox's default) so
+	-- both can sit on the same tower without fighting over the trigger.
+	local sellPrompt = Instance.new("ProximityPrompt")
+	sellPrompt.Name = "SellPrompt"
+	sellPrompt.ActionText = "Vendre"
+	sellPrompt.ObjectText = "Remboursement 50%"
+	sellPrompt.KeyboardKeyCode = Enum.KeyCode.F
+	sellPrompt.HoldDuration = 0.4
+	sellPrompt.MaxActivationDistance = 12
+	sellPrompt.Parent = model
+
 	local tower = {
 		Model = model,
 		Tile = tile,
@@ -66,6 +77,8 @@ function TowerManager.Build(state, tile, towerKey)
 		Level = 1,
 		Cooldown = 0,
 		UpgradePrompt = prompt,
+		SellPrompt = sellPrompt,
+		TotalSpent = def.baseCost,
 	}
 
 	updatePromptText(tower, def)
@@ -90,7 +103,31 @@ function TowerManager.Upgrade(state, tower)
 
 	state.Gold -= cost
 	tower.Level += 1
+	tower.TotalSpent += cost
 	updatePromptText(tower, def)
+	return true
+end
+
+local SELL_REFUND_RATE = 0.5
+
+-- Refunds half of everything spent on this tower (base cost + upgrades),
+-- frees its tile, and removes it from the run.
+function TowerManager.Sell(state, tower)
+	local index = table.find(state.Towers, tower)
+	if not index then
+		return false
+	end
+
+	state.Gold += math.floor(tower.TotalSpent * SELL_REFUND_RATE)
+	tower.Tile:SetAttribute("Occupied", false)
+
+	local buildPrompt = tower.Tile:FindFirstChild("BuildPrompt")
+	if buildPrompt then
+		buildPrompt.Enabled = true
+	end
+
+	tower.Model:Destroy()
+	table.remove(state.Towers, index)
 	return true
 end
 
@@ -144,6 +181,40 @@ function TowerManager.Tick(state, dt, now)
 
 				if best.Hp <= 0 then
 					EnemyManager.KillByRef(state, best)
+				end
+
+				-- Tesla-style chain: jump to the nearest not-yet-hit enemy
+				-- within chainRange of the last one hit, up to chainCount
+				-- total targets (including the primary one above).
+				if levelDef.chainCount and levelDef.chainCount > 1 then
+					local hit = { best }
+					local lastPos = best.Model.Position
+
+					for _ = 2, levelDef.chainCount do
+						local nextEnemy, nextDist = nil, math.huge
+						for _, enemy in ipairs(state.Enemies) do
+							if not table.find(hit, enemy) then
+								local dist = (enemy.Model.Position - lastPos).Magnitude
+								if dist <= levelDef.chainRange and dist < nextDist then
+									nextEnemy = enemy
+									nextDist = dist
+								end
+							end
+						end
+
+						if not nextEnemy then
+							break
+						end
+
+						fireEffect(lastPos, nextEnemy.Model.Position, def.color)
+						nextEnemy.Hp -= levelDef.damage
+						if nextEnemy.Hp <= 0 then
+							EnemyManager.KillByRef(state, nextEnemy)
+						end
+
+						table.insert(hit, nextEnemy)
+						lastPos = nextEnemy.Model.Position
+					end
 				end
 			end
 		end

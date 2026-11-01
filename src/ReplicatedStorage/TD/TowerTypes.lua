@@ -49,4 +49,18 @@ return {
 			{ range = 27, damage = 18, rate = 1.6, burnDps = 22, burnDur = 3.2, upgradeCost = 0 },
 		},
 	},
+	-- New: chains to nearby enemies on hit (chainCount includes the primary
+	-- target; each extra jump looks for the nearest unhit enemy within
+	-- chainRange of the previous one).
+	tesla = {
+		name = "Tour Tesla",
+		baseCost = 140,
+		unlockWave = 15,
+		color = Color3.fromRGB(140, 210, 255),
+		levels = {
+			{ range = 26, damage = 7, rate = 1.6, chainCount = 2, chainRange = 14, upgradeCost = 140 },
+			{ range = 29, damage = 11, rate = 1.75, chainCount = 3, chainRange = 16, upgradeCost = 220 },
+			{ range = 32, damage = 16, rate = 1.9, chainCount = 4, chainRange = 18, upgradeCost = 0 },
+		},
+	},
 }
