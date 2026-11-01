@@ -109,14 +109,16 @@ for arenaIndex = 1, ARENA_COUNT do
 		segment.Parent = roadFolder
 	end
 
+	-- Purely a logical marker (no visual): the previous bright neon disc on
+	-- the ground was flagged as ugly, so spawning just happens invisibly at
+	-- this point now.
 	local portal = Instance.new("Part")
 	portal.Name = "Portal"
 	portal.Shape = Enum.PartType.Cylinder
 	portal.Size = Vector3.new(1, 10, 10)
 	portal.Anchored = true
 	portal.CanCollide = false
-	portal.Material = Enum.Material.Neon
-	portal.Color = Color3.fromRGB(180, 70, 220)
+	portal.Transparency = 1
 	portal.CFrame = CFrame.new(worldWaypoints[1]) * CFrame.Angles(0, 0, math.rad(90))
 	portal.Parent = arena
 

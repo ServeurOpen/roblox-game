@@ -39,7 +39,8 @@ statBarCorner.Parent = statBar
 local statLayout = Instance.new("UIListLayout")
 statLayout.FillDirection = Enum.FillDirection.Horizontal
 statLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-statLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceEvenly
+statLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+statLayout.Padding = UDim.new(0, 12)
 statLayout.Parent = statBar
 
 local function makeStatLabel(name)
@@ -62,14 +63,15 @@ local waveLabel = makeStatLabel("Wave")
 
 local banner = Instance.new("TextLabel")
 banner.Name = "Banner"
-banner.Size = UDim2.new(0, 500, 0, 50)
+banner.Size = UDim2.new(0, 560, 0, 50)
 banner.AnchorPoint = Vector2.new(0.5, 0)
 banner.Position = UDim2.new(0.5, 0, 0, 70)
 banner.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 banner.BackgroundTransparency = 0.3
 banner.TextColor3 = Color3.fromRGB(255, 220, 120)
 banner.Font = Enum.Font.GothamBold
-banner.TextSize = 22
+banner.TextSize = 18
+banner.TextWrapped = true
 banner.Text = ""
 banner.Visible = false
 banner.Parent = screenGui
@@ -86,7 +88,7 @@ local function showBanner(text)
 
 	local tween = TweenService:Create(
 		banner,
-		TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5),
+		TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 3),
 		{ BackgroundTransparency = 1, TextTransparency = 1 }
 	)
 	tween:Play()

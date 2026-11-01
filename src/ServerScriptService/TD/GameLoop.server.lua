@@ -50,6 +50,9 @@ local function startNextWave(state)
 		table.insert(state.PendingSpawns, { Key = key, Delay = (i - 1) * interval })
 	end
 
+	state.WaveKills = 0
+	state.WaveGoldEarned = 0
+	state.WaveLivesLost = 0
 	state.Status = "spawning"
 	RunState.Push(state.Player)
 	announce(state.Player, "Vague " .. state.Wave)
@@ -81,6 +84,9 @@ local function resetRun(state)
 	state.Status = "waiting"
 	state.NextWaveAt = os.clock() + 2
 	state.SelectedTowerKey = nil
+	state.WaveKills = 0
+	state.WaveGoldEarned = 0
+	state.WaveLivesLost = 0
 	RunState.Push(state.Player)
 end
 
@@ -265,6 +271,7 @@ RunService.Heartbeat:Connect(function(dt)
 			local livesLost = EnemyManager.Step(state, dt, now)
 			if livesLost > 0 then
 				state.Lives -= livesLost
+				state.WaveLivesLost += livesLost
 				RunState.Push(state.Player)
 				state.LastPushAt = now
 				if state.Lives <= 0 then
@@ -277,7 +284,16 @@ RunService.Heartbeat:Connect(function(dt)
 				state.NextWaveAt = now + WAVE_CLEAR_DELAY
 				RunState.Push(state.Player)
 				state.LastPushAt = now
-				announce(state.Player, "Vague " .. state.Wave .. " terminee !")
+				announce(
+					state.Player,
+					string.format(
+						"Vague %d terminee ! %d ennemis elimines, +%d or, %d vies perdues",
+						state.Wave,
+						state.WaveKills,
+						state.WaveGoldEarned,
+						state.WaveLivesLost
+					)
+				)
 			elseif state.Status == "spawning" and now - state.LastPushAt >= 0.25 then
 				-- Kills during combat change Gold without any other push
 				-- happening, so the client's counter would otherwise look

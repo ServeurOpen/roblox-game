@@ -152,6 +152,8 @@ function EnemyManager.Kill(state, index, grantGold)
 
 	if grantGold ~= false then
 		state.Gold += enemy.Value
+		state.WaveGoldEarned += enemy.Value
+		state.WaveKills += 1
 	end
 
 	local deathPosition = enemy.Model.Position

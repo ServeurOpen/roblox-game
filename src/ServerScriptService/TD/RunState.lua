@@ -25,6 +25,9 @@ function RunState.New(player, arenaIndex)
 		PendingSpawns = {}, -- { Key, Delay } with Delay counting down to 0
 		NextWaveAt = 0, -- os.clock() timestamp; countdown to auto-start next wave
 		LastPushAt = 0, -- os.clock() of the last state push to this player's client
+		WaveKills = 0, -- reset at the start of each wave, for the end-of-wave recap
+		WaveGoldEarned = 0,
+		WaveLivesLost = 0,
 	}
 	states[player.UserId] = state
 	return state
