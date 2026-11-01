@@ -19,7 +19,6 @@ function RunState.New(player, arenaIndex)
 		Lives = 20,
 		Wave = 0,
 		Status = "waiting", -- waiting | spawning | gameover
-		SelectedTowerKey = nil,
 		Towers = {}, -- { Model, Key, Level, Cooldown }
 		Enemies = {}, -- { Model, Key, Hp, MaxHp, WaypointIndex, Progress, BaseSpeed, Dmg, Value, SlowMult, SlowUntil, BurnDps, BurnUntil }
 		PendingSpawns = {}, -- { Key, Delay } with Delay counting down to 0
@@ -64,7 +63,6 @@ function RunState.Push(player)
 		Lives = state.Lives,
 		Wave = state.Wave,
 		Status = state.Status,
-		SelectedTowerKey = state.SelectedTowerKey,
 		WaveCountdown = waveCountdown,
 	})
 end

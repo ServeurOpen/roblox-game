@@ -19,6 +19,7 @@ end
 
 makeEvent(RemoteNames.STATE_UPDATED)
 makeFunction(RemoteNames.GET_RUN_STATE)
-makeEvent(RemoteNames.SELECT_TOWER_TYPE)
+makeEvent(RemoteNames.OPEN_TOWER_MENU)
+makeEvent(RemoteNames.REQUEST_BUILD)
 makeEvent(RemoteNames.START_WAVE_NOW)
 makeEvent(RemoteNames.WAVE_EVENT)

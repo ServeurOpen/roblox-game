@@ -17,7 +17,8 @@ local TowerManager = require(script.Parent.TowerManager)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 local getRunState = remotes:WaitForChild(RemoteNames.GET_RUN_STATE)
-local selectTowerType = remotes:WaitForChild(RemoteNames.SELECT_TOWER_TYPE)
+local openTowerMenu = remotes:WaitForChild(RemoteNames.OPEN_TOWER_MENU)
+local requestBuild = remotes:WaitForChild(RemoteNames.REQUEST_BUILD)
 local startWaveNow = remotes:WaitForChild(RemoteNames.START_WAVE_NOW)
 local waveEvent = remotes:WaitForChild(RemoteNames.WAVE_EVENT)
 
@@ -58,32 +59,12 @@ local function startNextWave(state)
 	announce(state.Player, "Vague " .. state.Wave)
 end
 
-local function updateTilePromptsForSelection(state)
-	local arena = ArenaManager.GetArenaModel(state.ArenaIndex)
-	if not arena then
-		return
-	end
-	local tilesFolder = arena:FindFirstChild("Tiles")
-	if not tilesFolder then
-		return
-	end
-
-	local def = state.SelectedTowerKey and TowerTypes[state.SelectedTowerKey]
-	for _, tile in ipairs(tilesFolder:GetChildren()) do
-		local prompt = tile:FindFirstChild("BuildPrompt")
-		if prompt and not tile:GetAttribute("Occupied") then
-			prompt.ObjectText = def and (def.name .. " - " .. def.baseCost) or "Select a tower"
-		end
-	end
-end
-
 local function resetRun(state)
 	state.Wave = 0
 	state.Gold = 200
 	state.Lives = 20
 	state.Status = "waiting"
 	state.NextWaveAt = os.clock() + 2
-	state.SelectedTowerKey = nil
 	state.WaveKills = 0
 	state.WaveGoldEarned = 0
 	state.WaveLivesLost = 0
@@ -172,14 +153,13 @@ getRunState.OnServerInvoke = function(player)
 		Lives = state.Lives,
 		Wave = state.Wave,
 		Status = state.Status,
-		SelectedTowerKey = state.SelectedTowerKey,
 		WaveCountdown = math.max(0, state.NextWaveAt - os.clock()),
 	}
 end
 
-selectTowerType.OnServerEvent:Connect(function(player, towerKey)
+local function tryBuild(player, tile, towerKey, arenaIndex)
 	local state = RunState.Get(player)
-	if not state then
+	if not state or state.ArenaIndex ~= arenaIndex then
 		return
 	end
 	if type(towerKey) ~= "string" or not TowerTypes[towerKey] then
@@ -191,9 +171,50 @@ selectTowerType.OnServerEvent:Connect(function(player, towerKey)
 		return
 	end
 
-	state.SelectedTowerKey = towerKey
+	local ok, towerOrErr = TowerManager.Build(state, tile, towerKey)
+	if not ok then
+		return
+	end
+
+	local buildPrompt = tile:FindFirstChild("BuildPrompt")
+	if buildPrompt then
+		buildPrompt.Enabled = false
+	end
+
+	local tower = towerOrErr
+	tower.UpgradePrompt.Triggered:Connect(function(upgradePlayer)
+		local upgradeState = RunState.Get(upgradePlayer)
+		if not upgradeState or upgradeState.ArenaIndex ~= arenaIndex then
+			return
+		end
+
+		local upgraded = TowerManager.Upgrade(upgradeState, tower)
+		if upgraded then
+			RunState.Push(upgradePlayer)
+		end
+	end)
+
 	RunState.Push(player)
-	updateTilePromptsForSelection(state)
+end
+
+requestBuild.OnServerEvent:Connect(function(player, tile, towerKey)
+	if typeof(tile) ~= "Instance" or not tile:IsA("BasePart") then
+		return
+	end
+	if tile:GetAttribute("Occupied") then
+		return
+	end
+
+	local state = RunState.Get(player)
+	if not state then
+		return
+	end
+	local arena = ArenaManager.GetArenaModel(state.ArenaIndex)
+	if not arena or not tile:IsDescendantOf(arena) then
+		return
+	end
+
+	tryBuild(player, tile, towerKey, state.ArenaIndex)
 end)
 
 startWaveNow.OnServerEvent:Connect(function(player)
@@ -219,29 +240,11 @@ for arenaIndex = 1, ArenaManager.ARENA_COUNT do
 					if not state or state.ArenaIndex ~= arenaIndex then
 						return
 					end
-					if not state.SelectedTowerKey then
+					if tile:GetAttribute("Occupied") then
 						return
 					end
 
-					local ok, towerOrErr = TowerManager.Build(state, tile, state.SelectedTowerKey)
-					if ok then
-						buildPrompt.Enabled = false
-						local tower = towerOrErr
-
-						tower.UpgradePrompt.Triggered:Connect(function(upgradePlayer)
-							local upgradeState = RunState.Get(upgradePlayer)
-							if not upgradeState or upgradeState.ArenaIndex ~= arenaIndex then
-								return
-							end
-
-							local upgraded = TowerManager.Upgrade(upgradeState, tower)
-							if upgraded then
-								RunState.Push(upgradePlayer)
-							end
-						end)
-
-						RunState.Push(player)
-					end
+					openTowerMenu:FireClient(player, tile)
 				end)
 			end
 		end
