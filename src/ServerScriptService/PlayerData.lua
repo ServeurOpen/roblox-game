@@ -1,11 +1,18 @@
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 
-local store = DataStoreService:GetDataStore("PlayerData_TD_v1")
+local store = DataStoreService:GetDataStore("PlayerData_Farm_v1")
 
-local DEFAULT_DATA = {
-	BestWave = 0,
-}
+-- A function, not a shared table: DEFAULT_DATA has nested arrays
+-- (OwnedPets/EquippedPets), and table.clone only copies one level deep -
+-- every new player would otherwise mutate the same two shared tables.
+local function defaultData()
+	return {
+		Energy = 0,
+		OwnedPets = { "starter" },
+		EquippedPets = { "starter" },
+	}
+end
 
 local cache = {}
 
@@ -22,7 +29,7 @@ function PlayerData.Load(player)
 		return store:GetAsync("Player_" .. player.UserId)
 	end)
 
-	local data = table.clone(DEFAULT_DATA)
+	local data = defaultData()
 	if ok and result then
 		data = result
 	end
