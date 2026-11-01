@@ -17,6 +17,8 @@ local function makeFunction(name)
 	f.Parent = remotes
 end
 
-makeEvent(RemoteNames.CASH_UPDATED)
-makeEvent(RemoteNames.PURCHASE_BOOSTER)
-makeFunction(RemoteNames.GET_PLAYER_DATA)
+makeEvent(RemoteNames.STATE_UPDATED)
+makeFunction(RemoteNames.GET_RUN_STATE)
+makeEvent(RemoteNames.SELECT_TOWER_TYPE)
+makeEvent(RemoteNames.START_WAVE_NOW)
+makeEvent(RemoteNames.WAVE_EVENT)

@@ -1,17 +1,10 @@
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local GameConfig = require(ReplicatedStorage.GameConfig)
-
-local store = DataStoreService:GetDataStore("PlayerData_v2")
+local store = DataStoreService:GetDataStore("PlayerData_TD_v1")
 
 local DEFAULT_DATA = {
-	Cash = GameConfig.StartingCash,
-	OwnsDoubleCash = false,
-	OwnsVIP = false,
-	PlotIndex = nil,
-	GeneratorCount = 0,
+	BestWave = 0,
 }
 
 local cache = {}

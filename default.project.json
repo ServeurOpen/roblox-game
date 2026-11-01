@@ -8,11 +8,6 @@
     "ReplicatedStorage": {
       "$path": "src/ReplicatedStorage"
     },
-    "StarterPlayer": {
-      "StarterPlayerScripts": {
-        "$path": "src/StarterPlayerScripts"
-      }
-    },
     "StarterGui": {
       "$path": "src/StarterGui"
     }

@@ -1,65 +1,82 @@
-# Roblox Game (Tycoon/Simulateur) — projet Rojo
+# Tower Defense Infini (Roblox) — projet Rojo
 
-Squelette de jeu Roblox synchronisé avec Studio via [Rojo](https://rojo.space/).
-Je (Claude) modifie le code ici et tu n'as qu'à `git pull` pour que ça se
-resynchronise automatiquement dans Studio.
+Portage sur Roblox du jeu web "Tower Defense Infini" (studio FERRA). Pas
+un copier-coller du JS/Canvas (impossible, moteurs totalement différents) :
+le design (stats des tours/ennemis, formules de scaling des vagues,
+économie) est repris du fichier source, mais tout le code est réécrit en
+Lua pour de vrai (parts 3D, combat serveur-autorité).
+
+Synchronisé avec Studio via [Rojo](https://rojo.space/) : je (Claude)
+modifie le code ici, tu fais `git pull` et ça se resynchronise
+automatiquement dans Studio tant que `rojo serve` tourne.
 
 ## Installation (une seule fois)
 
-1. **Plugin Rojo dans Studio** : ouvre Roblox Studio → Toolbox / Plugins
-   Marketplace → cherche "Rojo" → installe le plugin officiel (rojo-rbx).
-2. **Rojo CLI sur ton PC** : installe [Aftman](https://github.com/LPGhatguy/aftman)
-   (gestionnaire d'outils), puis dans ce dossier lance :
+1. **Plugin Rojo dans Studio** : Toolbox / Plugins Marketplace → "Rojo"
+   (par Rojo Foundation) → installer.
+2. **Rojo CLI sur ton PC** : `cargo install aftman` (ou l'installeur
+   officiel GitHub, jamais un site tiers), puis dans ce dossier :
    ```
    aftman install
    ```
-   Ça installe automatiquement la bonne version de Rojo (voir `aftman.toml`).
-3. Clone ce repo en local si ce n'est pas déjà fait :
+3. Clone ce repo si ce n'est pas déjà fait :
    ```
    git clone https://github.com/ServeurOpen/roblox-game.git
    cd roblox-game
    ```
 
-## Utilisation (à chaque session de travail)
+## Utilisation (à chaque session)
 
-1. Dans le dossier du projet : `rojo serve`
-2. Dans Roblox Studio (fichier `.rbxl` vide ou ton jeu existant) : ouvre le
-   plugin Rojo → clique **Connect**.
-3. Les scripts apparaissent dans l'explorer Studio. Teste avec le bouton
-   Play habituel.
+1. **Stop** toute partie Play en cours dans Studio avant de puller (sinon
+   risque de doublons d'instances en mémoire).
+2. `git pull`
+3. `rojo serve` (laisse le terminal ouvert)
+4. Studio → plugin Rojo → **Connect** → accepter la synchro.
+5. **Exécuter** (Play) pour tester.
 
-Quand je pousse de nouveaux scripts sur ce repo : `git pull`, puis Rojo
-resynchronise automatiquement (tant que `rojo serve` tourne et que Studio
-est connecté).
+## v1 : ce qui est jouable maintenant
+
+- 4 parcelles de jeu privées (une par joueur), attribuées automatiquement
+  à l'arrivée, avec téléportation directe dessus.
+- Chemin en zigzag généré proceduralement, zones constructibles
+  calculées automatiquement autour du chemin (pas de placement à la main).
+- 4 tours : Canon, Tour Archer, Tour de Glace (ralentit), Tour de Feu
+  (brûlure) — stats/coûts repris du fichier source.
+- 4 ennemis : Rôdeur, Furtif Rapide, Blindé, Diviseur (se divise en
+  Éclats à sa mort) — stats reprises du fichier source.
+- Vagues infinies avec la vraie formule de scaling du jeu original
+  (nombre d'ennemis, vitesse de spawn, vie, vitesse, récompense en or).
+- Or de départ 200, 20 vies, défaite = reset de la run (le meilleur
+  numéro de vague atteint est sauvegardé en `PlayerData.BestWave`).
+- HUD : or/vies/vague, menu de construction, bouton "Lancer la vague"
+  avec compte à rebours automatique.
+
+## Ce qui n'est PAS encore porté (prochaines étapes)
+
+Le jeu source est enorme (9 tours, 16 ennemis dont 5 boss, synergies
+élémentaires, vagues maudites, prestige, wiki, classement, panel admin).
+Tout faire d'un coup aurait donné quelque chose de bâclé — on ajoute le
+reste par vagues, testées une par une :
+
+- Tours restantes : Vent, Tesla, Poison, Caserne Militaire, Tour du
+  Prestige.
+- Ennemis restants + vagues de Boss/Mini-Boss (toutes les 10/5 vagues),
+  roulette de boss, Nécromancien (invocation), Chaman Soigneur.
+- Synergies élémentaires entre tours.
+- Vagues maudites (mutateurs aléatoires après la vague 15).
+- Vente de tours, repositionnement.
+- Système de Prestige, Wiki, classement, succès.
+- Monétisation (Game Pass/Dev Products) — volontairement pas encore
+  remise en place, à faire une fois le cœur de jeu validé.
 
 ## Structure
 
-- `src/ReplicatedStorage/` — config partagée (IDs Game Pass/Dev Product,
-  noms des Remotes)
-- `src/ServerScriptService/` — logique serveur : sauvegarde des données
-  (DataStore), économie (gain de cash), monétisation (achats Robux)
-- `src/StarterGui/` — UI affichée au joueur (compteur de cash)
-- `src/StarterPlayerScripts/` — scripts client (boutique de boosters)
-
-## Avant de publier : configurer la monétisation
-
-Dans **Roblox Creator Dashboard** (depuis la page de ton jeu) :
-
-1. Crée un **Game Pass** "Double Cash" et un "VIP" → récupère leurs IDs
-   numériques → colle-les dans `src/ReplicatedStorage/GameConfig.lua`
-   (`GamePasses.DoubleCash`, `GamePasses.VIP`).
-2. Crée des **Developer Products** "100 Cash", "500 Cash", "2000 Cash" →
-   récupère leurs IDs → colle-les dans le même fichier (`DevProducts`).
-3. Pour recevoir l'argent réel (pas juste des Robux) : configure le
-   **DevEx (Developer Exchange)** sur ton compte Roblox une fois que tu as
-   au moins 30 000 Robux cumulés et que ton compte respecte les conditions
-   (âge, compte vérifié, etc.) — voir la page officielle Roblox DevEx.
-
-## Idées de prochaines étapes
-
-- Construire les plots de tycoon (zones à acheter/upgrader) dans Studio,
-  les relier à `Economy.server.lua`.
-- Ajouter une vraie UI de boutique (boutons) qui appellent
-  `BoosterShop.PromptDoubleCash()`, `PromptVIP()`, `PromptCash(100)`.
-- Ajouter un système de codes promo / événements pour relancer
-  régulièrement l'intérêt des joueurs (boost de rétention).
+- `src/ReplicatedStorage/TD/` — configs partagées : `TowerTypes.lua`,
+  `EnemyTypes.lua`, `Formulas.lua` (scaling des vagues)
+- `src/ServerScriptService/TD/` — logique serveur : `ArenaSetup` (génère
+  les parcelles), `ArenaManager` (attribution), `RunState` (état de
+  partie par joueur), `EnemyManager`, `TowerManager`, `GameLoop` (boucle
+  principale + remotes)
+- `src/ServerScriptService/PlayerData.lua` — persistance DataStore
+  (uniquement `BestWave` pour l'instant)
+- `src/StarterGui/TowerDefenseHUD.client.lua` — toute l'UI
